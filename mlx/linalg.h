@@ -112,4 +112,6 @@ eigvalsh(const array& a, std::string UPLO = "L", StreamOrDevice s = {});
 MLX_API std::pair<array, array>
 eigh(const array& a, std::string UPLO = "L", StreamOrDevice s = {});
 
+MLX_API array det(const array& a, StreamOrDevice s = {});
+
 } // namespace mlx::core::linalg

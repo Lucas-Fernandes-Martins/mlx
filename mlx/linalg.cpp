@@ -583,7 +583,10 @@ void validate_lu(
   }
 }
 
-std::vector<array> lu_helper(const array& a, StreamOrDevice s /* = {} */) {
+std::vector<array> lu_helper(
+    const array& a,
+    StreamOrDevice s /* = {} */,
+    bool allow_singular = false) {
   int m = a.shape()[a.shape().size() - 2];
   int n = a.shape()[a.shape().size() - 1];
 
@@ -595,14 +598,14 @@ std::vector<array> lu_helper(const array& a, StreamOrDevice s /* = {} */) {
   return array::make_arrays(
       {a.shape(), pivots_shape, row_idx_shape},
       {a.dtype(), uint32, uint32},
-      std::make_shared<LUF>(to_stream(s)),
+      std::make_shared<LUF>(to_stream(s), allow_singular),
       {astype(a, a.dtype(), s)});
 }
 
 std::vector<array> lu(const array& a, StreamOrDevice s /* = {} */) {
   validate_lu(a, s, "[linalg::lu]");
 
-  auto out = lu_helper(a, s);
+  auto out = lu_helper(a, s, /*allow_singular=*/false);
   auto& LU = out[0];
   auto& row_pivots = out[2];
   auto L = tril(LU, /* k = */ -1, s);
@@ -703,6 +706,38 @@ array solve_triangular(
   validate_solve(a, b, s, "[linalg::solve_triangular]");
   auto a_inv = tri_inv(a, upper, s);
   return matmul(a_inv, b, s);
+}
+
+void validate_det(
+    const array& a,
+    const StreamOrDevice& stream,
+    const std::string& fname) {
+  check_cpu_stream(stream, fname);
+  check_float(a.dtype(), fname);
+  if (a.ndim() != 2 || a.shape(-2) != a.shape(-1)) {
+    std::ostringstream msg;
+    msg << fname
+        << " For determinant to be calculated, array must have 2 dimensions. Received array "
+           "with "
+        << a.ndim() << " dimensions.";
+    throw std::invalid_argument(msg.str());
+  }
+}
+
+array det(const array& a, StreamOrDevice s /* = {} */) {
+  validate_det(a, s, "[linalg::det]");
+
+  auto out = lu_helper(a, s, /*allow_singular=*/true);
+  auto& LU = out[0];
+  auto& pivots = out[1];
+
+  auto det_val = prod(diag(LU, 0, s), s);
+
+  auto indices = arange(pivots.shape(-1), pivots.dtype(), s);
+  auto num_swaps = sum(not_equal(pivots, indices, s), -1, false, s);
+  auto sign = power(array(-1.0f), astype(num_swaps, float32, s), s);
+
+  return multiply(sign, det_val, s);
 }
 
 } // namespace mlx::core::linalg

@@ -2537,13 +2537,17 @@ class Eigh : public Primitive {
 /* LU Factorization primitive. */
 class LUF : public Primitive {
  public:
-  explicit LUF(Stream stream) : Primitive(stream) {}
+  explicit LUF(Stream stream, bool allow_singular = false)
+      : Primitive(stream), allow_singular_(allow_singular) {}
   void eval_cpu(const std::vector<array>& inputs, std::vector<array>& outputs)
       override;
   void eval_gpu(const std::vector<array>& inputs, std::vector<array>& outputs)
       override;
 
   DEFINE_NAME(LUF)
+
+ private:
+  bool allow_singular_{false};
 };
 
 } // namespace mlx::core

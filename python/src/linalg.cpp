@@ -660,4 +660,31 @@ void init_linalg(nb::module_& parent_module) {
         Returns:
             array: The unique solution to the system ``AX = B``.
       )pbdoc");
+  m.def(
+      "det",
+      &mx::linalg::det,
+      "a"_a,
+      nb::kw_only(),
+      "stream"_a = nb::none(),
+      nb::sig(
+          "def det(a: array, *, stream: Union[None, Stream, Device] = None) -> array"),
+      R"pbdoc(
+        Compute the determinant of a square matrix.
+
+        This function computes the determinant using LU factorization.
+        Singular matrices return a determinant of ``0``.
+
+        Args:
+            a (array): Input square matrix. Must be 2-D.
+            stream (Stream, optional): Stream or device. Defaults to ``None``
+              in which case the default stream of the default device is used.
+
+        Returns:
+            array: The determinant of the input matrix.
+
+        Example:
+            >>> a = mx.array([[1., 2.], [3., 4.]])
+            >>> mx.linalg.det(a)
+            array(-2, dtype=float32)
+      )pbdoc");
 }

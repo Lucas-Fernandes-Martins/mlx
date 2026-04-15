@@ -616,6 +616,85 @@ class TestLinalg(mlx_tests.MLXTestCase):
         expected = np.linalg.solve(a, b)
         self.assertTrue(np.allclose(result, expected))
 
+    def test_det(self):
+        # 2x2 basic
+        a = mx.array([[1.0, 2.0], [3.0, 4.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - (-2.0)) < 1e-4)
+
+        # 3x3 identity
+        a = mx.eye(3)
+        self.assertTrue(abs(mx.linalg.det(a).item() - 1.0) < 1e-4)
+
+        # 1x1
+        a = mx.array([[5.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - 5.0) < 1e-4)
+
+        # 2x2 singular
+        a = mx.array([[1.0, 2.0], [2.0, 4.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item()) < 1e-3)
+
+        # 3x3 general
+        a = mx.array([[1.0, 2.0, 3.0],
+                       [4.0, 5.0, 6.0],
+                       [7.0, 8.0, 0.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - 27.0) < 1e-4)
+
+        # 3x3 diagonal
+        a = mx.array([[2.0, 0.0, 0.0],
+                       [0.0, 3.0, 0.0],
+                       [0.0, 0.0, 4.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - 24.0) < 1e-4)
+
+        # 3x3 upper triangular
+        a = mx.array([[2.0, 1.0, 3.0],
+                       [0.0, 5.0, 7.0],
+                       [0.0, 0.0, 4.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - 40.0) < 1e-4)
+
+        # 2x2 permutation (negative det)
+        a = mx.array([[0.0, 1.0], [1.0, 0.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - (-1.0)) < 1e-4)
+
+        # 4x4 general
+        a = mx.array([[1.0, 0.0, 2.0, -1.0],
+                       [3.0, 0.0, 0.0,  5.0],
+                       [2.0, 1.0, 4.0, -3.0],
+                       [1.0, 0.0, 5.0,  0.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - 30.0) < 1e-4)
+
+        # 4x4 scaled identity
+        a = 3.0 * mx.eye(4)
+        self.assertTrue(abs(mx.linalg.det(a).item() - 81.0) < 1e-4)
+
+        # 3x3 zeros (singular)
+        a = mx.zeros((3, 3))
+        self.assertTrue(abs(mx.linalg.det(a).item()) < 1e-3)
+
+        # 2x2 all negative
+        a = mx.array([[-1.0, -2.0], [-3.0, -4.0]])
+        self.assertTrue(abs(mx.linalg.det(a).item() - (-2.0)) < 1e-4)
+
+        # float64
+        a = mx.array([[1.0, 2.0], [3.0, 4.0]], dtype=mx.float64)
+        self.assertTrue(abs(mx.linalg.det(a).item() - (-2.0)) < 1e-10)
+
+    def test_det_throws(self):
+        # 1D array
+        with self.assertRaises(Exception):
+            mx.eval(mx.linalg.det(mx.array([1.0, 2.0, 3.0])))
+
+        # Non-square matrix
+        with self.assertRaises(Exception):
+            mx.eval(mx.linalg.det(mx.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])))
+
+        # 0D scalar
+        with self.assertRaises(Exception):
+            mx.eval(mx.linalg.det(mx.array(5.0)))
+
+        # Integer input
+        with self.assertRaises(Exception):
+            mx.eval(mx.linalg.det(mx.array([[1, 2], [3, 4]])))
+
 
 if __name__ == "__main__":
     mlx_tests.MLXTestRunner()
